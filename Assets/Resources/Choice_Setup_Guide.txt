@@ -1,0 +1,201 @@
+===============================================
+選択肢機能 セットアップガイド
+===============================================
+
+■ 概要
+選択肢機能により、プレイヤーの選択に応じてシナリオを分岐させることができます。
+
+■ 実装したファイル
+1. NovelData.cs - ChoiceDataクラスを追加
+2. NovelGameManager.cs - 選択肢表示と分岐処理を追加
+3. scenario_sample.json - 選択肢のサンプルを追加
+
+===============================================
+Unity側のセットアップ手順
+===============================================
+
+【ステップ1】選択肢ボタンプレハブの作成
+
+1-1. 選択肢ボタンの作成
+Hierarchy で TalkCanvas を右クリック → UI → Button
+名前を「ChoiceButton」に変更
+
+1-2. ボタンのサイズと見た目を調整
+- RectTransform の Width: 600, Height: 60 程度
+- 背景色やテキスト色を調整（お好みで）
+
+1-3. ボタン内のテキストを調整
+ChoiceButton の子要素の Text を選択
+- Font Size: 28
+- Alignment: Center
+
+1-4. プレハブ化
+Hierarchy の ChoiceButton を Project ウィンドウの
+Assets/Resources フォルダにドラッグ＆ドロップ
+→ プレハブが作成される
+
+1-5. Hierarchy から削除
+Hierarchy の ChoiceButton を削除（プレハブができたので不要）
+
+【ステップ2】選択肢コンテナの作成
+
+2-1. 空のGameObjectを作成
+TalkCanvas を右クリック → Create Empty
+名前を「ChoiceButtonContainer」に変更
+
+2-2. レイアウトコンポーネントを追加
+Inspector で「Add Component」
+→ Layout → Vertical Layout Group を追加
+
+2-3. Vertical Layout Groupの設定
+- Padding: Top 10, Bottom 10, Left 10, Right 10
+- Spacing: 20
+- Child Alignment: Middle Center
+- Child Controls Size: Width にチェック
+- Child Force Expand: Width と Height の両方にチェック
+
+2-4. 位置とサイズの調整
+RectTransform を以下のように設定:
+- Anchor Presets: Center
+- Width: 700
+- Height: 300
+- Pos X: 0, Pos Y: 0
+
+2-5. 初期状態を非表示に
+Inspector の左上のチェックを外して非表示にする
+（スクリプトから必要なときに表示されます）
+
+【ステップ3】NovelGameManagerへの設定
+
+3-1. EventSystem オブジェクトを選択
+Hierarchy で「EventSystem」を選択
+
+3-2. NovelGameManagerコンポーネントの設定
+Inspector で以下のフィールドを設定:
+- Choice Button Container: ChoiceButtonContainer オブジェクトをドラッグ
+- Choice Button Prefab: Project ウィンドウの ChoiceButton プレハブをドラッグ
+
+【ステップ4】動作確認
+
+4-1. Playボタンを押してゲームを実行
+
+4-2. 台詞を進めていく
+最初の2つの台詞（さくらと太郎の会話）をクリックで進める
+
+4-3. 選択肢が表示される
+さくらの「図書館に行こうと思ってるの。一緒に来る？」の後、
+2つの選択肢が表示されます:
+- 一緒に行く
+- 今日は用事がある
+
+4-4. 選択肢をクリック
+「一緒に行く」を選ぶと → 図書館シーンへ（ID: 10）
+「今日は用事がある」を選ぶと → さくらが残念がるシーンへ（ID: 20）
+
+===============================================
+JSONファイルでの選択肢の書き方
+===============================================
+
+■ 基本構造
+{
+  "id": 2,
+  "backgroundImage": "background_school.png",
+  "characterImage": "character_girl.png",
+  "characterPosition": "center",
+  "characterName": "さくら",
+  "dialogue": "図書館に行こうと思ってるの。一緒に来る？",
+  "autoWaitTime": 0,
+  "choices": [
+    {
+      "text": "一緒に行く",
+      "nextDialogueId": 10
+    },
+    {
+      "text": "今日は用事がある",
+      "nextDialogueId": 20
+    }
+  ]
+}
+
+■ フィールドの説明
+- choices: 選択肢のリスト（空配列なら通常の台詞進行）
+  - text: 選択肢に表示されるテキスト
+  - nextDialogueId: この選択肢を選んだときにジャンプする台詞のID
+
+■ 重要なポイント
+1. choices が空配列 [] の場合は通常の台詞として扱われます
+2. nextDialogueId は台詞の「配列のインデックス」ではなく「id」フィールドを指定します
+3. 分岐先の台詞には必ず対応する id を設定してください
+
+===============================================
+カスタマイズのヒント
+===============================================
+
+■ 選択肢ボタンのデザイン変更
+ChoiceButton プレハブを選択して:
+- 色: Button コンポーネントの Normal Color を変更
+- サイズ: RectTransform の Width/Height を変更
+- フォント: Text コンポーネントの Font を変更
+
+■ 選択肢の配置変更
+ChoiceButtonContainer の RectTransform を調整:
+- 上部に配置: Anchor を Top Center に変更
+- 左側に配置: Anchor を Middle Left に変更
+
+■ 選択肢の間隔調整
+ChoiceButtonContainer の Vertical Layout Group:
+- Spacing の値を変更（大きくすると間隔が広がる）
+
+■ 3つ以上の選択肢
+JSON の choices 配列に3つ以上の要素を追加できます:
+"choices": [
+  { "text": "選択肢1", "nextDialogueId": 10 },
+  { "text": "選択肢2", "nextDialogueId": 20 },
+  { "text": "選択肢3", "nextDialogueId": 30 }
+]
+
+■ 複雑な分岐シナリオ
+選択肢の先でさらに選択肢を表示することも可能です。
+例: ID 10 の台詞に choices を追加すれば、さらに分岐できます。
+
+===============================================
+よくある問題と解決方法
+===============================================
+
+Q1. 選択肢ボタンが表示されない
+A1.
+- NovelGameManager の Choice Button Container と Choice Button Prefab が設定されているか確認
+- ChoiceButtonContainer が非表示になっているか確認（初期状態で非表示が正常）
+- Console でエラーが出ていないか確認
+
+Q2. 選択肢をクリックしても反応しない
+A2.
+- EventSystem がシーンに存在するか確認
+- ChoiceButton プレハブに Button コンポーネントがあるか確認
+- Canvas の Graphic Raycaster が有効か確認
+
+Q3. 選択後にシーンが進まない
+A3.
+- JSON の nextDialogueId が正しい id を指定しているか確認
+- 指定した id の台詞が存在するか確認
+- Console で「ID X の台詞が見つかりません」というエラーが出ていないか確認
+
+Q4. 選択肢の位置がおかしい
+A4.
+- ChoiceButtonContainer の Anchor 設定を確認
+- Vertical Layout Group の設定を確認
+- ChoiceButton プレハブのサイズを確認
+
+===============================================
+サポート
+===============================================
+
+問題が発生した場合は、Unityの Console ウィンドウで
+エラーメッセージを確認してください。
+
+デバッグログは以下のように出力されます：
+- 選択肢表示: （特にログなし、選択肢ボタンが表示される）
+- 選択肢選択: （特にログなし、次のシーンへジャンプ）
+- エラー: "ID X の台詞が見つかりません"
+
+===============================================

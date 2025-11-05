@@ -2,12 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using TMPro;
+
 /// <summary>
 /// ノベルゲーム全体を管理するマネージャークラス
 /// </summary>
 public class NovelGameManager : MonoBehaviour
 {
-    //＝＝＝↓unity側から設定する値↓＝＝＝//
     [Header("JSONファイル設定")]
     [Tooltip("シナリオJSONファイル（ResourcesフォルダまたはStreamingAssetsフォルダに配置）")]
     public TextAsset scenarioJsonFile;
@@ -28,6 +30,13 @@ public class NovelGameManager : MonoBehaviour
     [Tooltip("台詞を表示するTextコンポーネント")]
     public Text dialogueText;
 
+    [Header("選択肢設定")]
+    [Tooltip("選択肢ボタンを配置する親オブジェクト")]
+    public GameObject choiceButtonContainer;
+
+    [Tooltip("選択肢ボタンのプレハブ")]
+    public GameObject choiceButtonPrefab;
+
     [Header("画像リソースフォルダ")]
     [Tooltip("背景画像が格納されているResourcesフォルダ内のパス（例: \"Backgrounds\"）")]
     public string backgroundResourcePath = "Backgrounds";
@@ -41,20 +50,19 @@ public class NovelGameManager : MonoBehaviour
 
     [Tooltip("自動進行を有効にするか")]
     public bool autoMode = false;
-    //＝＝＝↑unity側から設定する値↑＝＝＝//
 
     // 内部変数
-    private NovelScenario currentScenario;//セリフデータ全体
-    private int currentDialogueIndex = 0;//現在のセリフインデックス
-    private bool isTextDisplaying = false;//テキストを表示中か？表示し終わっているか？の値
-    private Coroutine textDisplayCoroutine;//　
+    private NovelScenario currentScenario;
+    private int currentDialogueIndex = 0;
+    private bool isTextDisplaying = false;
+    private bool isWaitingForChoice = false;
+    private Coroutine textDisplayCoroutine;
 
     void Start()
     {
         LoadScenario();
         if (currentScenario != null && currentScenario.dialogues.Count > 0)
         {
-            //jsonファイルの最初の台詞を表示
             DisplayDialogue(0);
         }
         else
@@ -65,6 +73,9 @@ public class NovelGameManager : MonoBehaviour
 
     void Update()
     {
+        // 選択肢待機中はクリック進行を無効化
+        if (isWaitingForChoice) return;
+
         // クリックまたはスペースキーで次へ進む
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
@@ -94,13 +105,8 @@ public class NovelGameManager : MonoBehaviour
 
         try
         {
-            //jsonファイル内のデータを読み込む
             string json = scenarioJsonFile.text;
-            //JsonUtility.FromJson<T>(json);でデシリアライズ
-            //※Tはデシリアライズ先のクラス名でjsonの中身が
-            //そのクラスの型に変換された状態で格納できる。
             currentScenario = JsonUtility.FromJson<NovelScenario>(json);
-
             Debug.Log($"シナリオを読み込みました。台詞数: {currentScenario.dialogues.Count}");
         }
         catch (System.Exception e)
@@ -114,7 +120,6 @@ public class NovelGameManager : MonoBehaviour
     /// </summary>
     void DisplayDialogue(int index)
     {
-        // インデックスが範囲外ならシナリオ終了
         if (currentScenario == null || index >= currentScenario.dialogues.Count)
         {
             Debug.Log("シナリオ終了");
@@ -122,32 +127,19 @@ public class NovelGameManager : MonoBehaviour
             return;
         }
 
-        // 現在の台詞インデックスを更新
         currentDialogueIndex = index;
+        DialogueData data = currentScenario.dialogues[index];
 
-        // dataに含まれるセリフデータ
-        //含まれるデータ: 
-        // 背景画像、
-        // キャラ画像、
-        // キャラ位置、
-        // キャラ名、
-        // 台詞文、
-        // 自動待機時間
-        DialogueData data = currentScenario.dialogues[index];//jsonの中身導入
-
-        //背景データが存在するかチェック
+        // 背景画像の変更
         if (!string.IsNullOrEmpty(data.backgroundImage))
         {
-            // 存在したら背景画像の変更
             LoadAndSetImage(data.backgroundImage, backgroundImage, backgroundResourcePath);
         }
 
-        // キャラクターデータが存在するかチェック
+        // キャラクター画像の変更
         if (!string.IsNullOrEmpty(data.characterImage))
         {
-            // 存在したらキャラクター画像の変更
             LoadAndSetImage(data.characterImage, characterImage, characterResourcePath);
-            // キャラクター画像表示枠を有効化
             characterImage.gameObject.SetActive(true);
 
             // キャラクター位置の設定
@@ -162,28 +154,23 @@ public class NovelGameManager : MonoBehaviour
         // キャラクター名の表示
         if (characterNameText != null)
         {
-            // 名前が空でなければ左右に角括弧を付ける
-            if (!string.IsNullOrEmpty(data.characterName))
-                characterNameText.text = $"[{data.characterName}]";
-            else
-                characterNameText.text = "";
+            characterNameText.text = data.characterName;
         }
 
         // 台詞のテキスト表示（アニメーション付き）
-        if (dialogueText == null)
-        {
-            Debug.LogError("dialogueText がインスペクタで割り当てられていません。テキストを表示できません。");
-            return;
-        }
-
         if (textDisplayCoroutine != null)
         {
             StopCoroutine(textDisplayCoroutine);
         }
         textDisplayCoroutine = StartCoroutine(DisplayTextAnimation(data.dialogue));
 
+        // 選択肢がある場合は選択肢を表示
+        if (data.choices != null && data.choices.Count > 0)
+        {
+            StartCoroutine(ShowChoicesAfterText(data.choices));
+        }
         // 自動進行の処理
-        if (autoMode && data.autoWaitTime > 0)
+        else if (autoMode && data.autoWaitTime > 0)
         {
             StartCoroutine(AutoAdvance(data.autoWaitTime));
         }
@@ -194,20 +181,15 @@ public class NovelGameManager : MonoBehaviour
     /// </summary>
     void LoadAndSetImage(string fileName, Image targetImage, string resourcePath)
     {
-        // targetImageがnullなら何もしない
         if (targetImage == null) return;
 
-        //データフォルダ場所を特定
-        string fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(fileName);// 拡張子を除去（Resourcesは拡張子なしで読み込む）
+        // 拡張子を除去（Resourcesは拡張子なしで読み込む）
+        string fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(fileName);
         string fullPath = $"{resourcePath}/{fileNameWithoutExt}";
 
-        //特定したパスから画像を読み込み
         Sprite sprite = Resources.Load<Sprite>(fullPath);
-
-        //画像があるか確認
         if (sprite != null)
         {
-            // 画像が読み込めたらセット
             targetImage.sprite = sprite;
             Debug.Log($"画像を読み込みました: {fullPath}");
         }
@@ -249,26 +231,8 @@ public class NovelGameManager : MonoBehaviour
     /// </summary>
     IEnumerator DisplayTextAnimation(string fullText)
     {
-        // テキスト表示中フラグを立てる
         isTextDisplaying = true;
-
-        //そもそもセットしていない場合はエラーを出す
-        if (dialogueText == null)
-        {
-            Debug.LogError("dialogueText が null です。インスペクタで割り当ててください。");
-            isTextDisplaying = false;
-            yield break;
-        }
-
-        // テキストを空にしてから表示開始   
         dialogueText.text = "";
-
-        // fullText が null の場合は空表示にする
-        if (string.IsNullOrEmpty(fullText))
-        {
-            isTextDisplaying = false;
-            yield break;
-        }
 
         if (textSpeed <= 0)
         {
@@ -300,14 +264,7 @@ public class NovelGameManager : MonoBehaviour
 
         if (currentScenario != null && currentDialogueIndex < currentScenario.dialogues.Count)
         {
-            if (dialogueText != null)
-            {
-                dialogueText.text = currentScenario.dialogues[currentDialogueIndex].dialogue;
-            }
-            else
-            {
-                Debug.LogError("dialogueText が null です。SkipTextAnimation でテキストを設定できません。");
-            }
+            dialogueText.text = currentScenario.dialogues[currentDialogueIndex].dialogue;
         }
 
         isTextDisplaying = false;
@@ -318,6 +275,17 @@ public class NovelGameManager : MonoBehaviour
     /// </summary>
     void NextDialogue()
     {
+        // 現在の台詞にシーン遷移設定があるかチェック
+        if (currentScenario != null && currentDialogueIndex < currentScenario.dialogues.Count)
+        {
+            DialogueData currentData = currentScenario.dialogues[currentDialogueIndex];
+            if (!string.IsNullOrEmpty(currentData.nextSceneName))
+            {
+                LoadScene(currentData.nextSceneName);
+                return;
+            }
+        }
+
         int nextIndex = currentDialogueIndex + 1;
         DisplayDialogue(nextIndex);
     }
@@ -368,5 +336,117 @@ public class NovelGameManager : MonoBehaviour
     public void JumpToDialogue(int index)
     {
         DisplayDialogue(index);
+    }
+
+    /// <summary>
+    /// テキスト表示が終わるまで待ってから選択肢を表示
+    /// </summary>
+    IEnumerator ShowChoicesAfterText(List<ChoiceData> choices)
+    {
+        // テキスト表示が終わるまで待つ
+        while (isTextDisplaying)
+        {
+            yield return null;
+        }
+
+        // 選択肢を表示
+        ShowChoices(choices);
+    }
+
+    /// <summary>
+    /// 選択肢ボタンを動的に生成して表示
+    /// </summary>
+    void ShowChoices(List<ChoiceData> choices)
+    {
+        if (choiceButtonContainer == null || choiceButtonPrefab == null)
+        {
+            Debug.LogError("choiceButtonContainerまたはchoiceButtonPrefabが設定されていません。");
+            return;
+        }
+
+        // 選択肢待機状態にする
+        isWaitingForChoice = true;
+
+        // コンテナを表示
+        choiceButtonContainer.SetActive(true);
+
+        // 各選択肢のボタンを生成
+        foreach (ChoiceData choice in choices)
+        {
+            GameObject buttonObj = Instantiate(choiceButtonPrefab, choiceButtonContainer.transform);
+            Button button = buttonObj.GetComponent<Button>();
+            Text buttonText = buttonObj.GetComponentInChildren<Text>();
+
+            if (buttonText != null)
+            {
+                buttonText.text = choice.text;
+            }
+
+            if (button != null)
+            {
+                int nextId = choice.nextDialogueId;
+                button.onClick.AddListener(() => OnChoiceSelected(nextId));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 選択肢が選ばれたときの処理
+    /// </summary>
+    void OnChoiceSelected(int nextDialogueId)
+    {
+        // 選択肢ボタンをクリア
+        ClearChoices();
+
+        // 選択肢待機状態を解除
+        isWaitingForChoice = false;
+
+        // 指定されたIDの台詞にジャンプ
+        JumpToDialogueById(nextDialogueId);
+    }
+
+    /// <summary>
+    /// 選択肢ボタンをすべて削除
+    /// </summary>
+    void ClearChoices()
+    {
+        if (choiceButtonContainer == null) return;
+
+        // コンテナ内のすべての子オブジェクトを削除
+        foreach (Transform child in choiceButtonContainer.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // コンテナを非表示
+        choiceButtonContainer.SetActive(false);
+    }
+
+    /// <summary>
+    /// IDで台詞を検索してジャンプ
+    /// </summary>
+    void JumpToDialogueById(int id)
+    {
+        if (currentScenario == null) return;
+
+        for (int i = 0; i < currentScenario.dialogues.Count; i++)
+        {
+            if (currentScenario.dialogues[i].id == id)
+            {
+                DisplayDialogue(i);
+                return;
+            }
+        }
+
+        Debug.LogError($"ID {id} の台詞が見つかりません。");
+    }
+
+    /// <summary>
+    /// 指定されたシーンをロード
+    /// </summary>
+    void LoadScene(string sceneName)
+    {
+        Debug.Log($"シーン '{sceneName}' に遷移します。");
+        SceneManager.LoadScene(sceneName);
     }
 }

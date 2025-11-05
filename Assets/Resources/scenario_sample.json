@@ -7,7 +7,9 @@
       "characterPosition": "center",
       "characterName": "さくら",
       "dialogue": "おはよう！今日もいい天気だね。",
-      "autoWaitTime": 0
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": ""
     },
     {
       "id": 1,
@@ -16,7 +18,9 @@
       "characterPosition": "center",
       "characterName": "太郎",
       "dialogue": "うん、本当にいい天気だ。今日は放課後何をする予定？",
-      "autoWaitTime": 0
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": ""
     },
     {
       "id": 2,
@@ -25,25 +29,62 @@
       "characterPosition": "center",
       "characterName": "さくら",
       "dialogue": "図書館に行こうと思ってるの。一緒に来る？",
-      "autoWaitTime": 0
+      "autoWaitTime": 0,
+      "choices": [
+        {
+          "text": "一緒に行く",
+          "nextDialogueId": 10
+        },
+        {
+          "text": "今日は用事がある",
+          "nextDialogueId": 20
+        }
+      ],
+      "nextSceneName": ""
     },
     {
-      "id": 3,
+      "id": 10,
       "backgroundImage": "background_library.png",
       "characterImage": "",
       "characterPosition": "center",
       "characterName": "ナレーション",
       "dialogue": "放課後、二人は図書館へ向かった。",
-      "autoWaitTime": 0
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": ""
     },
     {
-      "id": 4,
+      "id": 11,
       "backgroundImage": "background_library.png",
       "characterImage": "character_girl.png",
       "characterPosition": "center",
       "characterName": "さくら",
       "dialogue": "この本、面白そうだね！",
-      "autoWaitTime": 0
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": "SampleScene"
+    },
+    {
+      "id": 20,
+      "backgroundImage": "background_school.png",
+      "characterImage": "character_girl.png",
+      "characterPosition": "center",
+      "characterName": "さくら",
+      "dialogue": "そっか、残念だな...じゃあまた明日ね！",
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": ""
+    },
+    {
+      "id": 21,
+      "backgroundImage": "background_school.png",
+      "characterImage": "",
+      "characterPosition": "center",
+      "characterName": "ナレーション",
+      "dialogue": "さくらは一人で帰って行った。",
+      "autoWaitTime": 0,
+      "choices": [],
+      "nextSceneName": "SampleScene"
     }
   ]
 }

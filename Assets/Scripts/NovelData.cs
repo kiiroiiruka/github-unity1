@@ -38,4 +38,20 @@ public class DialogueData
 
     [Tooltip("次の台詞に進むまでの自動待機時間（秒）0なら手動クリック待ち")]
     public float autoWaitTime = 0f;
+
+    [Tooltip("選択肢のリスト（空なら通常の台詞進行）")]
+    public List<ChoiceData> choices = new List<ChoiceData>();
+
+    [Tooltip("この台詞の後にロードするシーン名（空ならシーン遷移しない）")]
+    public string nextSceneName = "";
+}
+
+[Serializable]
+public class ChoiceData
+{
+    [Tooltip("選択肢のテキスト")]
+    public string text;
+
+    [Tooltip("この選択肢を選んだときにジャンプする台詞のID")]
+    public int nextDialogueId;
 }
