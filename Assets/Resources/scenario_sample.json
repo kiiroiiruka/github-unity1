@@ -1,0 +1,49 @@
+{
+  "dialogues": [
+    {
+      "id": 0,
+      "backgroundImage": "background_school.png",
+      "characterImage": "character_girl.png",
+      "characterPosition": "center",
+      "characterName": "さくら",
+      "dialogue": "おはよう！今日もいい天気だね。",
+      "autoWaitTime": 0
+    },
+    {
+      "id": 1,
+      "backgroundImage": "background_school.png",
+      "characterImage": "character_boy.png",
+      "characterPosition": "center",
+      "characterName": "太郎",
+      "dialogue": "うん、本当にいい天気だ。今日は放課後何をする予定？",
+      "autoWaitTime": 0
+    },
+    {
+      "id": 2,
+      "backgroundImage": "background_school.png",
+      "characterImage": "character_girl.png",
+      "characterPosition": "center",
+      "characterName": "さくら",
+      "dialogue": "図書館に行こうと思ってるの。一緒に来る？",
+      "autoWaitTime": 0
+    },
+    {
+      "id": 3,
+      "backgroundImage": "background_library.png",
+      "characterImage": "",
+      "characterPosition": "center",
+      "characterName": "ナレーション",
+      "dialogue": "放課後、二人は図書館へ向かった。",
+      "autoWaitTime": 0
+    },
+    {
+      "id": 4,
+      "backgroundImage": "background_library.png",
+      "characterImage": "character_girl.png",
+      "characterPosition": "center",
+      "characterName": "さくら",
+      "dialogue": "この本、面白そうだね！",
+      "autoWaitTime": 0
+    }
+  ]
+}

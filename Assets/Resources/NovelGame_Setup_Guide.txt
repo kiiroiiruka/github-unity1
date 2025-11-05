@@ -1,0 +1,193 @@
+===============================================
+ノベルゲームシステム セットアップガイド
+===============================================
+
+■ 概要
+このノベルゲームシステムでは、JSONファイルからシナリオを読み込み、
+背景画像、キャラクター画像、台詞を表示します。
+
+■ 作成したファイル
+1. NovelData.cs - JSONデータ構造を定義
+2. NovelGameManager.cs - ゲーム全体を管理するメインスクリプト
+3. scenario_sample.json - サンプルシナリオファイル
+
+===============================================
+セットアップ手順
+===============================================
+
+【ステップ1】フォルダ構造の作成
+以下のフォルダを作成してください：
+
+Assets/
+  └─ Resources/
+      ├─ Backgrounds/     （背景画像を入れる）
+      ├─ Characters/      （キャラクター画像を入れる）
+      └─ scenario_sample.json （既に作成済み）
+
+【ステップ2】画像の準備
+1. 背景画像を Assets/Resources/Backgrounds/ に配置
+   例: background_school.png, background_library.png
+
+2. キャラクター画像を Assets/Resources/Characters/ に配置
+   例: character_girl.png, character_boy.png
+
+※ PNG形式推奨、透過対応
+
+【ステップ3】Gameシーンの設定
+
+3-1. Canvas（UI）の作成
+Hierarchy で右クリック → UI → Canvas
+
+3-2. 背景用Imageの作成
+Canvas を右クリック → UI → Image
+名前を「BackgroundImage」に変更
+- Inspector で Anchor Presets を「Stretch/Stretch」に設定
+- RectTransform の Left, Top, Right, Bottom をすべて 0 に設定
+
+3-3. キャラクター用Imageの作成
+Canvas を右クリック → UI → Image
+名前を「CharacterImage」に変更
+- Width: 400, Height: 600 程度（キャラクター画像のサイズに合わせる）
+- Anchor Presets を「Bottom Center」に設定
+
+3-4. テキストボックスの作成
+Canvas を右クリック → UI → Panel
+名前を「TextBoxPanel」に変更
+- Anchor Presets を「Bottom/Stretch」に設定
+- Height: 200 程度
+- 色を半透明の黒などに設定（Alpha: 200程度）
+
+3-5. キャラクター名表示用テキストの作成
+TextBoxPanel を右クリック → UI → Text - TextMeshPro
+名前を「CharacterNameText」に変更
+- 左上に配置
+- Font Size: 28
+- Width: 300, Height: 50
+
+※ TextMeshPro のインポートを求められたら「Import TMP Essentials」をクリック
+
+3-6. 台詞表示用テキストの作成
+TextBoxPanel を右クリック → UI → Text - TextMeshPro
+名前を「DialogueText」に変更
+- テキストボックスの中央に配置
+- Font Size: 24
+- Width: 900, Height: 120
+
+【ステップ4】NovelGameManagerの設定
+
+4-1. 空のGameObjectを作成
+Hierarchy で右クリック → Create Empty
+名前を「NovelGameManager」に変更
+
+4-2. スクリプトをアタッチ
+Inspector で「Add Component」→「NovelGameManager」を選択
+
+4-3. 各フィールドを設定
+- Scenario Json File: scenario_sample（Resourcesフォルダから選択）
+- Background Image: BackgroundImage オブジェクトをドラッグ
+- Character Image: CharacterImage オブジェクトをドラッグ
+- Text Box Panel: TextBoxPanel オブジェクトをドラッグ
+- Character Name Text: CharacterNameText をドラッグ
+- Dialogue Text: DialogueText をドラッグ
+- Background Resource Path: "Backgrounds"（デフォルト）
+- Character Resource Path: "Characters"（デフォルト）
+- Text Speed: 0.05（お好みで調整）
+- Auto Mode: チェックなし（手動クリック進行）
+
+【ステップ5】動作確認
+1. Playボタンを押してゲームを実行
+2. 画面をクリックまたはスペースキーで次の台詞へ進む
+3. テキスト表示中にクリックすると、即座に全文表示される
+
+===============================================
+JSONファイルの編集方法
+===============================================
+
+scenario_sample.json を開いて、以下の形式で台詞を追加できます：
+
+{
+  "dialogues": [
+    {
+      "id": 0,
+      "backgroundImage": "background_school.png",
+      "characterImage": "character_girl.png",
+      "characterPosition": "center",  // left, center, right
+      "characterName": "さくら",
+      "dialogue": "おはよう！今日もいい天気だね。",
+      "autoWaitTime": 0  // 0なら手動クリック、数値なら自動進行（秒）
+    }
+  ]
+}
+
+■ フィールドの説明
+- id: 台詞のID（管理用、連番推奨）
+- backgroundImage: 背景画像ファイル名（拡張子含む）
+- characterImage: キャラクター画像ファイル名（空文字""で非表示）
+- characterPosition: キャラクターの表示位置（left/center/right）
+- characterName: キャラクター名（画面に表示される）
+- dialogue: 表示する台詞
+- autoWaitTime: 自動進行の待機時間（秒）、0なら手動クリック待ち
+
+===============================================
+よくある問題と解決方法
+===============================================
+
+Q1. 画像が表示されない
+A1.
+- 画像がResourcesフォルダの正しい場所にあるか確認
+- JSONのファイル名が正確か確認（大文字小文字も区別されます）
+- Unityで画像をインポート後、Texture Typeを「Sprite (2D and UI)」に設定
+
+Q2. テキストが表示されない
+A2.
+- TextMeshProがインポートされているか確認
+- DialogueText の Canvas Renderer が有効か確認
+- テキストの色が背景と被っていないか確認
+
+Q3. JSONが読み込めない
+A3.
+- JSONファイルがResourcesフォルダ直下にあるか確認
+- JSON形式が正しいか確認（https://jsonlint.com/ で検証可能）
+- NovelGameManagerのScenario Json Fileフィールドに設定されているか確認
+
+Q4. クリックしても進まない
+A4.
+- EventSystemがシーンに存在するか確認（Canvasを作成すると自動で追加されます）
+- Consoleウィンドウでエラーが出ていないか確認
+
+===============================================
+カスタマイズのヒント
+===============================================
+
+■ テキスト速度の変更
+NovelGameManager の Text Speed を変更
+- 0: 一括表示
+- 0.05: 標準速度
+- 0.1: ゆっくり
+
+■ 自動進行モードの有効化
+NovelGameManager の Auto Mode にチェックを入れる
+各台詞の autoWaitTime で待機時間を設定
+
+■ キャラクター位置の調整
+NovelGameManager.cs の SetCharacterPosition() メソッドで
+anchoredPosition の値を変更
+
+■ 複数のシナリオファイルを使用
+1. 新しいJSONファイルを作成
+2. NovelGameManagerのScenario Json Fileを切り替え
+3. または、スクリプトを拡張してシーン切り替え機能を追加
+
+===============================================
+サポート
+===============================================
+
+問題が発生した場合は、Unityの Console ウィンドウで
+エラーメッセージを確認してください。
+
+デバッグログは以下のように出力されます：
+- "シナリオを読み込みました。台詞数: X"
+- "画像を読み込みました: Backgrounds/xxx"
+- "シナリオ終了"
+
+===============================================
